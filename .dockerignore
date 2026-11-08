@@ -1,0 +1,16 @@
+.git/
+.vs/
+.idea/
+.supabase/
+supabase/.temp/
+**/.temp/
+**/node_modules/
+**/bin/
+**/obj/
+**/dist/
+**/build/
+**/coverage/
+.env
+.env.*
+!.env.example
+*.log

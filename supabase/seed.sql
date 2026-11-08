@@ -1,0 +1,1 @@
+-- Foundation migrations do not require application seed data.
