@@ -14,6 +14,33 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Npgsql;
 
+if (args.Length > 0 && args[0] == "--bootstrap-platform-owner")
+{
+    if (args.Length != 2)
+    {
+        throw new ArgumentException(
+            "Usage: --bootstrap-platform-owner <verified-auth-email>");
+    }
+
+    var bootstrapDatabaseConnectionString =
+        Environment.GetEnvironmentVariable("ELANGI_PLATFORM_BOOTSTRAP_DATABASE");
+    if (string.IsNullOrWhiteSpace(bootstrapDatabaseConnectionString))
+    {
+        throw new InvalidOperationException(
+            "ELANGI_PLATFORM_BOOTSTRAP_DATABASE must be set for the controlled bootstrap command.");
+    }
+
+    await using var bootstrapDataSource =
+        NpgsqlDataSource.Create(bootstrapDatabaseConnectionString);
+    var bootstrap = new PlatformRoleBootstrap(
+        new PostgresPlatformRoleBootstrapRepository(
+            bootstrapDataSource,
+            new AuditWriter(new PostgresAuditRepository())));
+    await bootstrap.AssignInitialOwnerAsync(args[1]);
+    Console.WriteLine("Platform Owner bootstrap completed.");
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
 var jwtSettings = SupabaseJwtSettings.FromConfiguration(builder.Configuration);
 var databaseConnectionString = builder.Configuration.GetConnectionString("ApplicationDatabase");

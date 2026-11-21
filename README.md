@@ -21,14 +21,26 @@ ignored by Git. It does not reset local database data or target a hosted Supabas
 versioned SQL migrations for schema changes; do not make manual schema changes through Supabase
 Studio or run `db push` against a hosted project.
 
-The login screen can be viewed immediately. Using platform administration requires a local
-authenticated user with the Platform Owner role; the controlled bootstrap flow for that
-assignment has not yet been implemented.
+The login screen can be viewed immediately. To enable local platform administration:
 
-Run the foundation checks:
+1. In Supabase Studio (`http://127.0.0.1:54323`), create a verified Auth user. Enter its password
+   only in Studio.
+2. From the repository root, assign the initial role to that verified email:
+
+   ```powershell
+   .\scripts\bootstrap-platform-owner.ps1 -Email "your-verified-email@example.com"
+   ```
+
+This controlled command uses the local database administrator connection only for the duration
+of the command. It is not an HTTP endpoint; the normal API runtime role cannot assign global
+platform roles. The operation creates or reuses the Auth user's profile, assigns Platform Owner,
+and records a non-secret audit entry.
+
+Run the foundation checks (the .NET test projects run sequentially because they share local
+Supabase role grants):
 
 ```powershell
-dotnet test .\Elangi.sln
+dotnet test .\Elangi.sln -m:1
 npm --prefix .\frontend test
 npm --prefix .\frontend run build
 ```

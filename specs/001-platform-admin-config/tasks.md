@@ -127,7 +127,7 @@ global role.
 - [ ] T032 [US3] Implement role and permission domain rules so only Company-scoped catalog entries can be assigned to company roles in `src/Modules/Security/Domain/CompanyRole.cs` and `src/Modules/Security/Domain/PermissionDefinition.cs`.
 - [ ] T033 [US3] Implement company role list/create/update and permission-catalog read use cases, with transactional protection of the last active Company Administrator and durable audit events for mutations, in `src/Modules/Security/Application/CompanyRoleService.cs`.
 - [ ] T034 [US3] Implement `GET/POST /companies/{companyId}/roles`, `PUT /companies/{companyId}/roles/{roleId}`, and `GET /companies/{companyId}/permissions` in `src/Elangi.Api/Endpoints/Security/RoleEndpoints.cs`.
-- [ ] T035 [US3] Define the controlled Platform Owner bootstrap operation outside ordinary company-administration endpoints and prevent company role APIs from assigning platform roles in `src/Modules/Platform/Application/PlatformRoleBootstrap.cs`.
+- [X] T035 [US3] Define the controlled Platform Owner bootstrap operation outside ordinary company-administration endpoints and prevent company role APIs from assigning platform roles in `src/Modules/Platform/Application/PlatformRoleBootstrap.cs`.
 - [ ] T036 [US3] Build company role and permission assignment screens from backend capabilities in `frontend/src/features/company-roles/`.
 
 **Checkpoint**: Company role administration is tenant-limited and cannot grant global platform

@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Elangi.Api\Elangi.Api.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Platform\Elangi.Modules.Platform.csproj" />
     <ProjectReference Include="..\..\src\Modules\Security\Elangi.Modules.Security.csproj" />
     <ProjectReference Include="..\..\src\Modules\Audit\Elangi.Modules.Audit.csproj" />
     <ProjectReference Include="..\..\src\Shared\Infrastructure\Elangi.Shared.Infrastructure.csproj" />
