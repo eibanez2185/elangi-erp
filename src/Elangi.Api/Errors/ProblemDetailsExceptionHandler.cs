@@ -1,4 +1,5 @@
 using Elangi.Modules.Platform.Application;
+using Elangi.Modules.Platform.Domain;
 using Elangi.Modules.Security.Application;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,23 @@ public sealed class ProblemDetailsExceptionHandler(
         Exception exception,
         CancellationToken cancellationToken)
     {
+        if (exception is CompanyValidationException validationException)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+            await ProblemDetailsResponseWriter.WriteAsync(
+                httpContext.Response,
+                new ValidationProblemDetails(validationException.Errors)
+                {
+                    Status = StatusCodes.Status422UnprocessableEntity,
+                    Title = "Datos no válidos",
+                    Detail = "Corrige los campos indicados e inténtalo nuevamente.",
+                    Instance = httpContext.Request.Path
+                },
+                cancellationToken);
+
+            return true;
+        }
+
         var (status, title, detail) = exception switch
         {
             ApiException apiException => (apiException.StatusCode, apiException.Title, apiException.SafeDetail),

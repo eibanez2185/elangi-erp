@@ -7,12 +7,23 @@ public sealed class CompanyTests
     [Fact]
     public void Create_RequiresLegalNameAndCountryCode()
     {
-        Assert.Throws<ArgumentException>(
+        Assert.ThrowsAny<ArgumentException>(
             () => Company.Create(" ", "Trade", "US", null, null, null));
-        Assert.Throws<ArgumentException>(
+        Assert.ThrowsAny<ArgumentException>(
             () => Company.Create("Legal", "Trade", "USA", null, null, null));
-        Assert.Throws<ArgumentException>(
+        Assert.ThrowsAny<ArgumentException>(
             () => Company.Create("Legal", "Trade", "ZZ", null, null, null));
+    }
+
+    [Fact]
+    public void Create_ReportsCountryCodeErrorAgainstItsField()
+    {
+        var exception = Assert.Throws<CompanyValidationException>(
+            () => Company.Create("Legal", "Trade", "57", null, null, null));
+
+        Assert.Equal("countryCode", exception.ParamName);
+        Assert.Contains("prefijo telefónico", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("countryCode", exception.Errors.Keys);
     }
 
     [Fact]
@@ -39,7 +50,7 @@ public sealed class CompanyTests
     [InlineData("missing-at-sign.example.test")]
     public void Create_RejectsInvalidContactEmail(string email)
     {
-        Assert.Throws<ArgumentException>(
+        Assert.ThrowsAny<ArgumentException>(
             () => Company.Create(
                 "Example",
                 null,
@@ -54,7 +65,7 @@ public sealed class CompanyTests
     {
         var company = CreateCompany();
 
-        Assert.Throws<ArgumentException>(
+        Assert.ThrowsAny<ArgumentException>(
             () => company.WithIdentity(" ", null, "US", null, null, null));
 
         var updated = company.WithIdentity(
@@ -75,7 +86,7 @@ public sealed class CompanyTests
         var company = CreateCompany();
         var startsAt = DateTimeOffset.UtcNow;
 
-        Assert.Throws<ArgumentException>(
+        Assert.ThrowsAny<ArgumentException>(
             () => company.WithSubscription("standard", "trial", startsAt, startsAt.AddDays(-1)));
     }
 

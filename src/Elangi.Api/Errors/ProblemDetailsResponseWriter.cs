@@ -5,10 +5,11 @@ namespace Elangi.Api.Errors;
 
 public static class ProblemDetailsResponseWriter
 {
-    public static Task WriteAsync(
+    public static Task WriteAsync<TProblemDetails>(
         HttpResponse response,
-        ProblemDetails problemDetails,
+        TProblemDetails problemDetails,
         CancellationToken cancellationToken)
+        where TProblemDetails : ProblemDetails
     {
         response.ContentType = "application/problem+json";
         return JsonSerializer.SerializeAsync(

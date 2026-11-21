@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elangi.Api.Errors;
+using Elangi.Modules.Platform.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -59,5 +60,31 @@ public sealed class ProblemDetailsExceptionHandlerTests
         Assert.Equal(500, context.Response.StatusCode);
         Assert.Equal("An unexpected error occurred.", problem.RootElement.GetProperty("detail").GetString());
         Assert.DoesNotContain("private implementation detail", problem.RootElement.GetRawText(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TryHandleAsync_ReturnsCompanyValidationErrorsByField()
+    {
+        var responseBody = new MemoryStream();
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/api/v1/platform/companies";
+        context.Response.Body = responseBody;
+        var handler = new ProblemDetailsExceptionHandler(
+            NullLogger<ProblemDetailsExceptionHandler>.Instance);
+
+        var handled = await handler.TryHandleAsync(
+            context,
+            new CompanyValidationException("countryCode", "Ingresa el código ISO de dos letras."),
+            CancellationToken.None);
+
+        responseBody.Position = 0;
+        using var problem = await JsonDocument.ParseAsync(responseBody);
+
+        Assert.True(handled);
+        Assert.Equal(422, context.Response.StatusCode);
+        Assert.Equal("Datos no válidos", problem.RootElement.GetProperty("title").GetString());
+        Assert.Equal(
+            "Ingresa el código ISO de dos letras.",
+            problem.RootElement.GetProperty("errors").GetProperty("countryCode")[0].GetString());
     }
 }

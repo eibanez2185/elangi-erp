@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
 const { auth } = vi.hoisted(() => ({
@@ -16,6 +16,8 @@ vi.mock('./shared/supabase', () => ({
 }))
 
 describe('platform company administration', () => {
+  afterEach(cleanup)
+
   beforeEach(() => {
     vi.clearAllMocks()
     auth.getSession.mockResolvedValue({ data: { session: null }, error: null })
@@ -107,6 +109,57 @@ describe('platform company administration', () => {
           subscriptionEndsAt: null,
         }),
       }),
+    )
+  })
+
+  it('shows backend validation errors next to the affected company field', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
+        const isCreate = init?.method === 'POST'
+        return Promise.resolve(new Response(
+          JSON.stringify(isCreate
+            ? {
+                title: 'Datos no válidos',
+                detail: 'Corrige los campos indicados e inténtalo nuevamente.',
+                errors: {
+                  countryCode: ['El código no corresponde a un país ISO 3166-1 reconocido.'],
+                },
+              }
+            : []),
+          {
+            status: isCreate ? 422 : 200,
+            headers: { 'Content-Type': 'application/problem+json' },
+          },
+        ))
+      }),
+    )
+
+    render(<App />)
+    fireEvent.change(await screen.findByLabelText(/Correo electr/), {
+      target: { value: 'owner@example.test' },
+    })
+    fireEvent.change(screen.getByLabelText(/Contrase/), {
+      target: { value: 'test-password' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Iniciar sesi/ }))
+
+    fireEvent.change(await screen.findByLabelText(/Raz/), {
+      target: { value: 'Test Company' },
+    })
+    const countryInput = screen.getByLabelText(/Pa.s \(ISO 3166/)
+    fireEvent.change(countryInput, {
+      target: { value: 'ZZ' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Crear empresa' }))
+
+    const errorSummary = await screen.findByRole('alert')
+    expect(errorSummary.textContent).toContain(
+      'El código no corresponde a un país ISO 3166-1 reconocido.',
+    )
+    expect(countryInput.getAttribute('aria-invalid')).toBe('true')
+    expect(document.getElementById('country-code-error')?.textContent).toBe(
+      'El código no corresponde a un país ISO 3166-1 reconocido.',
     )
   })
 })

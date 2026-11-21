@@ -65,7 +65,7 @@ public sealed record Company
         var now = DateTimeOffset.UtcNow;
         return new Company(
             Guid.NewGuid(),
-            Required(legalName, nameof(legalName)),
+            Required(legalName, nameof(legalName), "La razón social es obligatoria."),
             Optional(tradeName),
             NormalizeCountry(countryCode),
             Optional(legalIdentifier),
@@ -120,7 +120,7 @@ public sealed record Company
         CompanyContactDetails? contactDetails) =>
         new(
             Id,
-            Required(legalName, nameof(legalName)),
+            Required(legalName, nameof(legalName), "La razón social es obligatoria."),
             Optional(tradeName),
             NormalizeCountry(countryCode),
             Optional(legalIdentifier),
@@ -142,7 +142,9 @@ public sealed record Company
     {
         if (startsAt is not null && endsAt is not null && endsAt < startsAt)
         {
-            throw new ArgumentException("Subscription end must not be before its start.");
+            throw new CompanyValidationException(
+                "subscriptionEndsAt",
+                "La fecha de fin debe ser posterior o igual a la fecha de inicio.");
         }
 
         return new Company(
@@ -195,19 +197,21 @@ public sealed record Company
             {
                 _ = new MailAddress(email);
             }
-            catch (FormatException exception)
+            catch (FormatException)
             {
-                throw new ArgumentException("Contact email is invalid.", nameof(details), exception);
+                throw new CompanyValidationException(
+                    "contactDetails.email",
+                    "Ingresa un correo de contacto válido.");
             }
         }
 
         return new CompanyContactDetails(email, Optional(details.Phone));
     }
 
-    private static string Required(string? value, string parameter)
+    private static string Required(string? value, string parameter, string message)
     {
         var normalized = Optional(value);
-        return normalized ?? throw new ArgumentException("A value is required.", parameter);
+        return normalized ?? throw new CompanyValidationException(parameter, message);
     }
 
     private static string? Optional(string? value)
@@ -221,21 +225,20 @@ public sealed record Company
         var normalized = value?.Trim().ToUpperInvariant();
         if (normalized is null || normalized.Length != 2 || normalized.Any(character => !char.IsAsciiLetter(character)))
         {
-            throw new ArgumentException(
-                "Country code must be a two-letter ISO code.",
-                nameof(value));
+            throw new CompanyValidationException(
+                "countryCode",
+                "Ingresa el código de país ISO de dos letras (por ejemplo, CO), no el prefijo telefónico.");
         }
 
         try
         {
             return new RegionInfo(normalized).TwoLetterISORegionName;
         }
-        catch (ArgumentException exception)
+        catch (ArgumentException)
         {
-            throw new ArgumentException(
-                "Country code must identify a supported ISO 3166-1 region.",
-                nameof(value),
-                exception);
+            throw new CompanyValidationException(
+                "countryCode",
+                "El código no corresponde a un país ISO 3166-1 reconocido.");
         }
     }
 }

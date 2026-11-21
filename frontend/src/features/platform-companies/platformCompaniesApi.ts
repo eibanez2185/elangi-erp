@@ -36,6 +36,19 @@ export type InitialAdministratorInvitation = {
   expiresAt: string
 }
 
+export class ApiRequestError extends Error {
+  readonly fieldErrors: Record<string, string[]>
+
+  constructor(
+    message: string,
+    fieldErrors: Record<string, string[]> = {},
+  ) {
+    super(message)
+    this.name = 'ApiRequestError'
+    this.fieldErrors = fieldErrors
+  }
+}
+
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000')
   .replace(/\/+$/, '')
 
@@ -104,9 +117,12 @@ async function request<T>(
 
   if (!response.ok) {
     const problem = await response.json().catch(() => null) as
-      | { detail?: string; title?: string }
+      | { detail?: string; title?: string; errors?: Record<string, string[]> }
       | null
-    throw new Error(problem?.detail || problem?.title || 'La solicitud no pudo completarse.')
+    throw new ApiRequestError(
+      problem?.detail || problem?.title || 'La solicitud no pudo completarse.',
+      problem?.errors ?? {},
+    )
   }
 
   return response.json() as Promise<T>

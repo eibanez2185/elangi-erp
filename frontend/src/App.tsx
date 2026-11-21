@@ -6,6 +6,7 @@ import {
   getCompanies,
   inviteInitialAdministrator,
   updateCompany,
+  ApiRequestError,
   type Company,
   type CompanyInput,
 } from './features/platform-companies/platformCompaniesApi'
@@ -35,6 +36,7 @@ function App() {
   const [companyForm, setCompanyForm] = useState<CompanyInput>(emptyCompany)
   const [inviteEmail, setInviteEmail] = useState('')
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -117,6 +119,7 @@ function App() {
     setSession(null)
     setCompanies([])
     setSelectedCompany(null)
+    setFieldErrors({})
     setNotice('')
   }
 
@@ -125,6 +128,7 @@ function App() {
     if (!session) return
     setBusy(true)
     setError('')
+    setFieldErrors({})
     setNotice('')
     try {
       const input = normalizeCompanyInput(companyForm)
@@ -140,6 +144,9 @@ function App() {
       setNotice(selectedCompany ? 'Empresa actualizada.' : 'Empresa creada en estado Suspendida.')
     } catch (cause) {
       setError(errorMessage(cause))
+      if (cause instanceof ApiRequestError) {
+        setFieldErrors(cause.fieldErrors)
+      }
     } finally {
       setBusy(false)
     }
@@ -151,6 +158,15 @@ function App() {
     setInviteEmail('')
     setNotice('')
     setError('')
+    setFieldErrors({})
+  }
+
+  function clearFieldError(field: string) {
+    setFieldErrors((current) => {
+      const remaining = { ...current }
+      delete remaining[field]
+      return remaining
+    })
   }
 
   async function handleStatusChange(company: Company) {
@@ -260,7 +276,20 @@ function App() {
         <button className="secondary" onClick={handleSignOut} type="button">Cerrar sesión</button>
       </header>
 
-      {error && <p className="feedback error" role="alert">{error}</p>}
+      {error && (
+        <div className="feedback error" role="alert">
+          <p>{error}</p>
+          {Object.keys(fieldErrors).length > 0 && (
+            <ul>
+              {Object.entries(fieldErrors).map(([field, messages]) => (
+                <li key={field}>
+                  <strong>{companyFieldLabels[field] ?? field}:</strong> {messages.join(' ')}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {notice && <p className="feedback success" role="status">{notice}</p>}
 
       <div className="dashboard">
@@ -278,6 +307,7 @@ function App() {
                 setInviteEmail('')
                 setNotice('')
                 setError('')
+                setFieldErrors({})
               }}
               type="button"
             >
@@ -332,18 +362,36 @@ function App() {
               Razón social
               <input
                 value={companyForm.legalName}
-                onChange={(event) => setCompanyForm({ ...companyForm, legalName: event.target.value })}
+                aria-invalid={Boolean(fieldErrors.legalName?.length)}
+                aria-describedby={fieldErrors.legalName?.length ? 'legal-name-error' : undefined}
+                onChange={(event) => {
+                  clearFieldError('legalName')
+                  setCompanyForm({ ...companyForm, legalName: event.target.value })
+                }}
                 required
               />
+              <FieldError id="legal-name-error" messages={fieldErrors.legalName} />
             </label>
             <label>
               País (ISO 3166-1 alpha-2)
               <input
                 maxLength={2}
+                pattern="[A-Za-z]{2}"
+                title="Usa el código ISO de dos letras (por ejemplo, CO), no el prefijo telefónico."
                 value={companyForm.countryCode}
-                onChange={(event) => setCompanyForm({ ...companyForm, countryCode: event.target.value.toUpperCase() })}
+                aria-invalid={Boolean(fieldErrors.countryCode?.length)}
+                aria-describedby={fieldErrors.countryCode?.length ? 'country-code-error' : undefined}
+                onInvalid={(event) => event.currentTarget.setCustomValidity(
+                  'Ingresa el código de país ISO de dos letras (por ejemplo, CO), no el prefijo telefónico.',
+                )}
+                onInput={(event) => event.currentTarget.setCustomValidity('')}
+                onChange={(event) => {
+                  clearFieldError('countryCode')
+                  setCompanyForm({ ...companyForm, countryCode: event.target.value.toUpperCase() })
+                }}
                 required
               />
+              <FieldError id="country-code-error" messages={fieldErrors.countryCode} />
             </label>
             <label>
               Nombre comercial
@@ -371,7 +419,10 @@ function App() {
               <input
                 type="email"
                 value={companyForm.contactDetails?.email ?? ''}
-                onChange={(event) =>
+                aria-invalid={Boolean(fieldErrors['contactDetails.email']?.length)}
+                aria-describedby={fieldErrors['contactDetails.email']?.length ? 'contact-email-error' : undefined}
+                onChange={(event) => {
+                  clearFieldError('contactDetails.email')
                   setCompanyForm({
                     ...companyForm,
                     contactDetails: {
@@ -379,8 +430,9 @@ function App() {
                       email: event.target.value,
                     },
                   })
-                }
+                }}
               />
+              <FieldError id="contact-email-error" messages={fieldErrors['contactDetails.email']} />
             </label>
             <label>
               Teléfono de contacto
@@ -416,7 +468,15 @@ function App() {
               <input
                 type="datetime-local"
                 value={companyForm.subscriptionStartedAt ?? ''}
-                onChange={(event) => setCompanyForm({ ...companyForm, subscriptionStartedAt: event.target.value })}
+                aria-invalid={Boolean(fieldErrors.subscriptionEndsAt?.length)}
+                aria-describedby={fieldErrors.subscriptionEndsAt?.length ? 'subscription-end-error' : undefined}
+                onChange={(event) => {
+                  setFieldErrors((current) => {
+                    const { subscriptionEndsAt: _, ...remaining } = current
+                    return remaining
+                  })
+                  setCompanyForm({ ...companyForm, subscriptionStartedAt: event.target.value })
+                }}
               />
             </label>
             <label>
@@ -424,8 +484,17 @@ function App() {
               <input
                 type="datetime-local"
                 value={companyForm.subscriptionEndsAt ?? ''}
-                onChange={(event) => setCompanyForm({ ...companyForm, subscriptionEndsAt: event.target.value })}
+                aria-invalid={Boolean(fieldErrors.subscriptionEndsAt?.length)}
+                aria-describedby={fieldErrors.subscriptionEndsAt?.length ? 'subscription-end-error' : undefined}
+                onChange={(event) => {
+                  setFieldErrors((current) => {
+                    const { subscriptionEndsAt: _, ...remaining } = current
+                    return remaining
+                  })
+                  setCompanyForm({ ...companyForm, subscriptionEndsAt: event.target.value })
+                }}
               />
+              <FieldError id="subscription-end-error" messages={fieldErrors.subscriptionEndsAt} />
             </label>
             <button className="wide" disabled={busy} type="submit">
               {busy ? 'Guardando...' : selectedCompany ? 'Guardar cambios' : 'Crear empresa'}
@@ -514,6 +583,19 @@ function isoToLocalDateTime(value: string | null): string {
 
 function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : 'Ocurrió un error inesperado.'
+}
+
+const companyFieldLabels: Record<string, string> = {
+  legalName: 'Razón social',
+  countryCode: 'País',
+  'contactDetails.email': 'Correo de contacto',
+  subscriptionEndsAt: 'Fin de suscripción',
+}
+
+function FieldError({ id, messages }: { id: string; messages?: string[] }) {
+  return messages?.length
+    ? <span className="field-error" id={id}>{messages.join(' ')}</span>
+    : null
 }
 
 export default App
