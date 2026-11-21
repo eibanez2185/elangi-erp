@@ -21,19 +21,22 @@ if ($Service -eq 'Frontend') {
 
 Set-Location $repositoryRoot
 
-& npx supabase start
-if ($LASTEXITCODE -ne 0) {
-    throw "Unable to start local Supabase. Ensure Docker Desktop is running."
+$startOutput = & $env:ComSpec /d /c 'npx supabase start 2>nul'
+$startExitCode = $LASTEXITCODE
+if ($startExitCode -ne 0) {
+    throw "Unable to start local Supabase (exit code $startExitCode). Ensure Docker Desktop is running."
 }
 
-& npx supabase migration up
-if ($LASTEXITCODE -ne 0) {
-    throw "Unable to apply pending local Supabase migrations."
+$migrationOutput = & $env:ComSpec /d /c 'npx supabase migration up 2>nul'
+$migrationExitCode = $LASTEXITCODE
+if ($migrationExitCode -ne 0) {
+    throw "Unable to apply pending local Supabase migrations (exit code $migrationExitCode)."
 }
 
-$statusLines = & npx supabase status -o env 2>$null
-if ($LASTEXITCODE -ne 0) {
-    throw "Unable to read local Supabase settings."
+$statusLines = & $env:ComSpec /d /c 'npx supabase status -o env 2>nul'
+$statusExitCode = $LASTEXITCODE
+if ($statusExitCode -ne 0) {
+    throw "Unable to read local Supabase settings (exit code $statusExitCode)."
 }
 
 $settings = @{}
@@ -90,9 +93,11 @@ if ($configuration -notmatch '(?m)^\s*project_id\s*=\s*"([^"]+)"') {
 }
 $databaseContainer = "supabase_db_$($Matches[1])"
 $sql = "ALTER ROLE elangi_runtime WITH LOGIN PASSWORD '$runtimePassword';"
-$sql | & docker exec -i $databaseContainer psql -U postgres -d postgres -v ON_ERROR_STOP=1
-if ($LASTEXITCODE -ne 0) {
-    throw "Unable to configure the local elangi_runtime database password."
+$databaseCommand = "docker exec -i $databaseContainer psql -U postgres -d postgres -v ON_ERROR_STOP=1 2>nul"
+$databaseOutput = $sql | & $env:ComSpec /d /c $databaseCommand
+$databaseExitCode = $LASTEXITCODE
+if ($databaseExitCode -ne 0) {
+    throw "Unable to configure the local elangi_runtime database password (exit code $databaseExitCode)."
 }
 
 $databaseName = [Uri]::UnescapeDataString($databaseUri.AbsolutePath.TrimStart('/'))
@@ -106,9 +111,11 @@ $env:VITE_SUPABASE_ANON_KEY = $publicKey
 $env:VITE_API_BASE_URL = 'http://localhost:5000'
 
 if (-not (Test-Path -LiteralPath (Join-Path $frontendPath 'node_modules'))) {
-    & npm ci --prefix $frontendPath
-    if ($LASTEXITCODE -ne 0) {
-        throw "Unable to install frontend dependencies with npm ci."
+    $installCommand = 'npm ci --prefix "' + $frontendPath + '" 2>nul'
+    $installOutput = & $env:ComSpec /d /c $installCommand
+    $installExitCode = $LASTEXITCODE
+    if ($installExitCode -ne 0) {
+        throw "Unable to install frontend dependencies with npm ci (exit code $installExitCode)."
     }
 }
 
