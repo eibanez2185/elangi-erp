@@ -1,32 +1,38 @@
-# React + TypeScript + Vite
+# Administración de plataforma ELANGI ERP
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+## Configuración local
 
-Currently, two official plugins are available:
+1. Inicia Supabase local con `npx supabase start`.
+2. Copia `.env.example` a `.env.local`.
+3. Configura `VITE_SUPABASE_URL` con la URL local de Supabase y
+   `VITE_SUPABASE_ANON_KEY` con la clave anónima/publicable que muestra
+   `npx supabase status -o env`. No uses `service_role`, `secret` ni credenciales de PostgreSQL
+   en el frontend.
+4. Inicia la API con la configuración local cargada:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+   ```powershell
+   . .\supabase\scripts\load-local-environment.ps1
+   $env:ConnectionStrings__ApplicationDatabase = "Host=127.0.0.1;Port=54322;Database=postgres;Username=elangi_runtime;Password=<local-runtime-password>"
+   dotnet run --project .\src\Elangi.Api\Elangi.Api.csproj --urls http://localhost:5000
+   ```
 
-## React Compiler
+5. En otra terminal:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+   ```powershell
+   Set-Location .\frontend
+   Copy-Item .env.example .env.local
+   npm install
+   npm run dev
+   ```
 
-## Expanding the Oxlint configuration
+La aplicación inicia sesión mediante Supabase Auth y envía el access token a la API. El backend
+vuelve a validar el rol Platform Owner en cada operación. La invitación inicial se entrega por
+correo SMTP local y el token original no se devuelve a la interfaz.
+Los correos de desarrollo pueden consultarse en Mailpit: `http://127.0.0.1:54324`.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Comandos
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+- `npm run dev`: inicia Vite.
+- `npm run build`: verifica TypeScript y genera la compilación.
+- `npm test`: ejecuta las pruebas de componentes.
+- `npm run lint`: analiza el frontend con Oxlint.

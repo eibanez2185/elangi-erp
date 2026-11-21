@@ -24,7 +24,9 @@ public sealed class PostgresCompanyAccessReaderTests
                    company.relrowsecurity,
                    company.relforcerowsecurity,
                    has_table_privilege('elangi_runtime', company.oid, 'SELECT'),
-                   has_table_privilege('elangi_runtime', company.oid, 'INSERT')
+                   has_table_privilege('elangi_runtime', company.oid, 'INSERT'),
+                   has_table_privilege('elangi_runtime', company.oid, 'UPDATE'),
+                   has_table_privilege('elangi_runtime', company.oid, 'DELETE')
             FROM pg_roles AS role
             JOIN pg_class AS company ON company.oid = 'platform.companies'::regclass
             WHERE role.rolname = 'elangi_runtime';
@@ -39,7 +41,9 @@ public sealed class PostgresCompanyAccessReaderTests
         Assert.True(reader.GetBoolean(3));
         Assert.True(reader.GetBoolean(4));
         Assert.True(reader.GetBoolean(5));
-        Assert.False(reader.GetBoolean(6));
+        Assert.True(reader.GetBoolean(6));
+        Assert.True(reader.GetBoolean(7));
+        Assert.False(reader.GetBoolean(8));
     }
 
     [Fact]
@@ -135,7 +139,6 @@ public sealed class PostgresCompanyAccessReaderTests
         var actorId = Guid.NewGuid();
         var companyId = Guid.NewGuid();
         var profileId = Guid.NewGuid();
-        var platformRoleId = Guid.NewGuid();
         await using var dataSource = CreateDataSource(GetDatabaseConnectionString());
         await GrantRuntimeRoleToCurrentUserAsync(dataSource);
 
@@ -145,8 +148,7 @@ public sealed class PostgresCompanyAccessReaderTests
                 dataSource,
                 actorId,
                 companyId,
-                profileId,
-                platformRoleId);
+                profileId);
 
             var service = CreateAuthorizationService(dataSource, actorId);
             await Assert.ThrowsAsync<CompanyAccessDeniedException>(
@@ -273,8 +275,8 @@ public sealed class PostgresCompanyAccessReaderTests
             INSERT INTO security.user_profiles (id, auth_user_id, display_name)
             VALUES (@profile_id, @actor_id, 'Integration test actor');
 
-            INSERT INTO platform.companies (id, status)
-            VALUES (@actor_company_id, @company_status);
+            INSERT INTO platform.companies (id, status, legal_name, country_code)
+            VALUES (@actor_company_id, @company_status, 'Integration Test Company', 'US');
             """,
             connection);
         command.Parameters.AddWithValue("actor_id", actorId);
@@ -299,8 +301,8 @@ public sealed class PostgresCompanyAccessReaderTests
             command.CommandText +=
                 """
 
-                INSERT INTO platform.companies (id, status)
-                VALUES (@other_company_id, 'Active');
+                INSERT INTO platform.companies (id, status, legal_name, country_code)
+                VALUES (@other_company_id, 'Active', 'Other Integration Company', 'US');
                 """;
             command.Parameters.AddWithValue("other_company_id", otherCompanyId.Value);
         }
@@ -312,8 +314,7 @@ public sealed class PostgresCompanyAccessReaderTests
         NpgsqlDataSource dataSource,
         Guid actorId,
         Guid companyId,
-        Guid profileId,
-        Guid platformRoleId)
+        Guid profileId)
     {
         await SeedActorAndCompaniesAsync(
             dataSource,
@@ -326,16 +327,17 @@ public sealed class PostgresCompanyAccessReaderTests
         await using var connection = await dataSource.OpenConnectionAsync();
         await using var command = new NpgsqlCommand(
             """
-            INSERT INTO platform.platform_roles (id, code, name)
-            VALUES (@role_id, 'platform-owner', 'Platform Owner');
-
             INSERT INTO platform.user_platform_roles (user_profile_id, role_id)
-            VALUES (@profile_id, @role_id);
+            SELECT @profile_id, id
+            FROM platform.platform_roles
+            WHERE code = 'platform-owner' AND is_active;
             """,
             connection);
-        command.Parameters.AddWithValue("role_id", platformRoleId);
         command.Parameters.AddWithValue("profile_id", profileId);
-        await command.ExecuteNonQueryAsync();
+        if (await command.ExecuteNonQueryAsync() != 1)
+        {
+            throw new InvalidOperationException("The Platform Owner bootstrap role is not seeded.");
+        }
     }
 
     private static async Task DeleteIdentityAndCompanyAsync(
@@ -368,7 +370,6 @@ public sealed class PostgresCompanyAccessReaderTests
 
             DELETE FROM auth.users WHERE id = @actor_id;
             DELETE FROM platform.companies WHERE id = ANY (@company_ids);
-            DELETE FROM platform.platform_roles WHERE code = 'platform-owner';
             """,
             connection);
         command.Parameters.AddWithValue("permission_code", GrantedPermission);

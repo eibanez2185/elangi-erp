@@ -61,17 +61,17 @@ read operational company data through global authority.
 
 ### Tests for User Story 1
 
-- [ ] T012 [P] [US1] Add company-creation, status, subscription-metadata, and Platform Owner authorization API tests in `tests/Elangi.ContractTests/Platform/CompanyAdministrationContractTests.cs`.
-- [ ] T013 [P] [US1] Add company validation and initial Suspended-state unit tests in `tests/Elangi.UnitTests/Platform/CompanyTests.cs`.
+- [X] T012 [P] [US1] Add company-creation, status, subscription-metadata, audit, invitation-delivery, and Platform Owner authorization API tests in `tests/Elangi.ContractTests/Platform/CompanyAdministrationContractTests.cs`.
+- [X] T013 [P] [US1] Add company validation and initial Suspended-state unit tests in `tests/Elangi.UnitTests/Platform/CompanyTests.cs`.
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Extend the existing Company and authorization core with company registration/subscription fields and add only invitation storage for the first-administrator flow in `supabase/migrations/202611070005_platform_company_invitation_core.sql`; do not recreate Company, profile, membership, role, or permission tables. A new Company starts `Suspended`, Pending membership has no profile, and invitations store only a token digest.
-- [ ] T015 [US1] Implement the Company domain model and validation for legal name, trade name, supported country, applicable legal identifier, address, contact details, and `Suspended` initial status in `src/Modules/Platform/Domain/Company.cs`.
-- [ ] T016 [US1] Implement create, list, read, update, activate/suspend, and non-billing subscription use cases in `src/Modules/Platform/Application/CompanyAdministrationService.cs`; persist the required non-secret audit event for each successful mutation through `AuditWriter`.
-- [ ] T017 [US1] Implement the Platform Owner company endpoints from `contracts/api.md` in `src/Elangi.Api/Endpoints/Platform/CompanyEndpoints.cs`; deny any implied operational-company access and never report a sensitive mutation successful if its audit write fails.
-- [ ] T018 [US1] Implement the initial Company Administrator invitation endpoint using the Company Administrator initial role and actor attribution through the verified Platform Owner profile in `src/Modules/Platform/Application/InitialAdministratorInvitationService.cs` and `src/Elangi.Api/Endpoints/Platform/InitialAdministratorInvitationEndpoints.cs`; write the required audit record through `AuditWriter`.
-- [ ] T019 [US1] Build the Platform Owner company list, create/edit form, status controls, subscription metadata display, and initial-administrator invitation interaction in `frontend/src/features/platform-companies/`.
+- [X] T014 [US1] Extend the existing Company and authorization core with company registration/subscription fields and add only invitation storage for the first-administrator flow in `supabase/migrations/202611070005_platform_company_invitation_core.sql`; do not recreate Company, profile, membership, role, or permission tables. A new Company starts `Suspended`, Pending membership has no profile, and invitations store only a token digest.
+- [X] T015 [US1] Implement the Company domain model and validation for legal name, trade name, supported ISO country, applicable legal identifier, address, contact details, and `Suspended` initial status in `src/Modules/Platform/Domain/Company.cs`.
+- [X] T016 [US1] Implement create, list, read, update, activate/suspend, and non-billing subscription use cases with PostgreSQL persistence in `src/Modules/Platform/Application/CompanyAdministrationService.cs`; persist the required non-secret audit event for each successful mutation through `AuditWriter`.
+- [X] T017 [US1] Implement the Platform Owner company endpoints from `contracts/api.md` in `src/Elangi.Api/Endpoints/Platform/CompanyEndpoints.cs`; deny any implied operational-company access and never report a sensitive mutation successful if its audit write fails.
+- [X] T018 [US1] Implement the initial Company Administrator invitation endpoint using the Company Administrator initial role and actor attribution through the verified Platform Owner profile in `src/Modules/Platform/Application/InitialAdministratorInvitationService.cs` and `src/Elangi.Api/Endpoints/Platform/InitialAdministratorInvitationEndpoints.cs`; deliver via configured SMTP, revoke the Pending invitation and membership on delivery failure using restricted RLS policies in migrations `202611080006` and `202611080007`, and audit the transitions through `AuditWriter`.
+- [X] T019 [US1] Build the Platform Owner company list, create/edit form, status controls, subscription metadata display, authentication, and initial-administrator invitation interaction in `frontend/src/features/platform-companies/`.
 
 **Checkpoint**: Company creation and platform metadata administration work independently, without
 granting a Platform Owner operational membership.

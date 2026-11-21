@@ -1,6 +1,8 @@
+using Elangi.Modules.Platform.Application;
 using Elangi.Modules.Security.Application;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Npgsql;
 
 namespace Elangi.Api.Errors;
 
@@ -16,6 +18,11 @@ public sealed class ProblemDetailsExceptionHandler(
         {
             ApiException apiException => (apiException.StatusCode, apiException.Title, apiException.SafeDetail),
             CompanyAccessDeniedException => (StatusCodes.Status403Forbidden, "Forbidden", "The requested company operation is not authorized."),
+            PlatformAccessDeniedException => (StatusCodes.Status403Forbidden, "Forbidden", "The requested platform operation is not authorized."),
+            PlatformResourceNotFoundException => (StatusCodes.Status404NotFound, "Not Found", "The requested resource was not found."),
+            PlatformConflictException => (StatusCodes.Status409Conflict, "Conflict", "The request conflicts with the current resource state."),
+            ArgumentException => (StatusCodes.Status422UnprocessableEntity, "Unprocessable Content", "The request contains invalid values."),
+            PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } => (StatusCodes.Status409Conflict, "Conflict", "The request conflicts with an existing resource."),
             UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "Forbidden", "The requested operation is not authorized."),
             _ => (StatusCodes.Status500InternalServerError, "Internal Server Error", "An unexpected error occurred.")
         };
