@@ -19,5 +19,6 @@ foreach ($required in @('API_URL', 'DB_URL', 'JWT_SECRET')) {
 $env:SUPABASE_JWT_ISSUER = "$($values['API_URL'].TrimEnd('/'))/auth/v1"
 $env:SUPABASE_JWT_AUDIENCE = 'authenticated'
 $env:SUPABASE_JWT_SECRET = $values['JWT_SECRET']
+$env:SUPABASE_JWT_USE_JWKS = 'true'
 $env:ELANGI_TEST_DATABASE = $values['DB_URL']
 Write-Output 'Local Supabase issuer and integration-test connection configured for this PowerShell process.'

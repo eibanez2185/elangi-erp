@@ -31,6 +31,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     {
         SetEnvironmentValue("SUPABASE_JWT_ISSUER", "http://localhost:54321/auth/v1");
         SetEnvironmentValue("SUPABASE_JWT_SECRET", "contract-test-signing-secret-not-a-real-credential");
+        SetEnvironmentValue("SUPABASE_JWT_USE_JWKS", "false");
         SetEnvironmentValue("ConnectionStrings__ApplicationDatabase",
             "Host=127.0.0.1;Port=54322;Database=postgres;Username=elangi_runtime;Password=not-used-for-health-test");
     }

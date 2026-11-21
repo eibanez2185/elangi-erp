@@ -104,6 +104,7 @@ $databaseName = [Uri]::UnescapeDataString($databaseUri.AbsolutePath.TrimStart('/
 $env:SUPABASE_JWT_ISSUER = "$($settings['API_URL'].TrimEnd('/'))/auth/v1"
 $env:SUPABASE_JWT_AUDIENCE = 'authenticated'
 $env:SUPABASE_JWT_SECRET = $settings['JWT_SECRET']
+$env:SUPABASE_JWT_USE_JWKS = 'true'
 $env:ConnectionStrings__ApplicationDatabase =
     "Host=127.0.0.1;Port=$($databaseUri.Port);Database=$databaseName;Username=elangi_runtime;Password=$runtimePassword"
 $env:VITE_SUPABASE_URL = $settings['API_URL'].TrimEnd('/')

@@ -328,6 +328,7 @@ public sealed class PlatformApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("SUPABASE_JWT_ISSUER", "https://contract-test.supabase.invalid/auth/v1");
         builder.UseSetting("SUPABASE_JWT_AUDIENCE", "authenticated");
         builder.UseSetting("SUPABASE_JWT_SECRET", SigningSecret);
+        builder.UseSetting("SUPABASE_JWT_USE_JWKS", "false");
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
             configuration.AddInMemoryCollection(new Dictionary<string, string?>
@@ -335,6 +336,7 @@ public sealed class PlatformApiFactory : WebApplicationFactory<Program>
                 ["SUPABASE_JWT_ISSUER"] = "https://contract-test.supabase.invalid/auth/v1",
                 ["SUPABASE_JWT_AUDIENCE"] = "authenticated",
                 ["SUPABASE_JWT_SECRET"] = SigningSecret,
+                ["SUPABASE_JWT_USE_JWKS"] = "false",
                 ["ConnectionStrings:ApplicationDatabase"] = connectionString,
                 ["InvitationEmail:SmtpHost"] = "127.0.0.1",
                 ["InvitationEmail:SmtpPort"] = "54325",

@@ -36,6 +36,9 @@ of the command. It is not an HTTP endpoint; the normal API runtime role cannot a
 platform roles. The operation creates or reuses the Auth user's profile, assigns Platform Owner,
 and records a non-secret audit entry.
 
+The local launcher configures the API to validate current Supabase ES256 access tokens through
+the Auth JWKS endpoint and retains legacy HS256 validation for compatibility.
+
 Run the foundation checks (the .NET test projects run sequentially because they share local
 Supabase role grants):
 
