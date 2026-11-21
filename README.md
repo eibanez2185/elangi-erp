@@ -4,42 +4,26 @@
 
 Requirements: .NET 10 SDK, Node.js/npm, Supabase CLI, and Docker Desktop.
 
-Start and reset only the local Supabase project:
+Start the complete local environment from the repository root:
 
 ```powershell
-npx supabase start
-npx supabase db reset
+.\scripts\start-local.ps1
 ```
 
-`db reset` targets the local project by default; do not add `--remote`. Migrations in
-`supabase/migrations/` are applied in filename order by the CLI. Keep schema changes in versioned
-SQL migrations; do not make manual schema changes through Supabase Studio or run `db push`
-against a hosted project.
+The script starts local Supabase, applies pending migrations without resetting the database,
+configures the API and frontend from local Supabase settings, installs frontend dependencies when
+needed, and opens the API and Vite frontend in separate PowerShell windows. Open
+`http://localhost:5173` to view the frontend; API health is at `http://localhost:5000/health`.
+The local Mailpit inbox is at `http://127.0.0.1:54324`.
 
-The runtime role receives no default table grants. Each migration must enable and force RLS on
-new tables before explicitly granting the runtime role only the required operations.
+The launcher stores a local-only runtime database password in `.env.elangi.local`, which is
+ignored by Git. It does not reset local database data or target a hosted Supabase project. Use
+versioned SQL migrations for schema changes; do not make manual schema changes through Supabase
+Studio or run `db push` against a hosted project.
 
-The API uses the `elangi_runtime` PostgreSQL login, not the database owner. After the local
-migrations create that role, set its password through the local database prompt:
-
-```powershell
-docker exec -it supabase_db_elangi-erp psql -U postgres -d postgres
-```
-
-At the `psql` prompt run `\password elangi_runtime`, enter a local-only password twice, then
-exit with `\q`. Configure `ConnectionStrings__ApplicationDatabase` in the current shell using
-that role and password; do not commit the value.
-
-Load local Auth settings and the database URL for integration tests without printing generated
-keys:
-
-```powershell
-. .\supabase\scripts\load-local-environment.ps1
-```
-
-The script sets `SUPABASE_JWT_ISSUER`, `SUPABASE_JWT_AUDIENCE`, `SUPABASE_JWT_SECRET`, and
-`ELANGI_TEST_DATABASE` only in the current PowerShell process. Do not copy these values into
-source files or logs.
+The login screen can be viewed immediately. Using platform administration requires a local
+authenticated user with the Platform Owner role; the controlled bootstrap flow for that
+assignment has not yet been implemented.
 
 Run the foundation checks:
 

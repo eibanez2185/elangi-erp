@@ -1,34 +1,21 @@
 # Administración de plataforma ELANGI ERP
 
-## Configuración local
+## Inicio local
 
-1. Inicia Supabase local con `npx supabase start`.
-2. Copia `.env.example` a `.env.local`.
-3. Configura `VITE_SUPABASE_URL` con la URL local de Supabase y
-   `VITE_SUPABASE_ANON_KEY` con la clave anónima/publicable que muestra
-   `npx supabase status -o env`. No uses `service_role`, `secret` ni credenciales de PostgreSQL
-   en el frontend.
-4. Inicia la API con la configuración local cargada:
+Desde la raíz del repositorio ejecuta:
 
-   ```powershell
-   . .\supabase\scripts\load-local-environment.ps1
-   $env:ConnectionStrings__ApplicationDatabase = "Host=127.0.0.1;Port=54322;Database=postgres;Username=elangi_runtime;Password=<local-runtime-password>"
-   dotnet run --project .\src\Elangi.Api\Elangi.Api.csproj --urls http://localhost:5000
-   ```
+```powershell
+.\scripts\start-local.ps1
+```
 
-5. En otra terminal:
+El script inicia Supabase local, la API y Vite en ventanas separadas. No se necesita copiar claves
+locales al archivo `.env.local`; las variables se pasan a los procesos desde el estado de Supabase.
+No uses claves `service_role`, secretas ni credenciales de PostgreSQL en el frontend.
 
-   ```powershell
-   Set-Location .\frontend
-   Copy-Item .env.example .env.local
-   npm install
-   npm run dev
-   ```
-
-La aplicación inicia sesión mediante Supabase Auth y envía el access token a la API. El backend
-vuelve a validar el rol Platform Owner en cada operación. La invitación inicial se entrega por
-correo SMTP local y el token original no se devuelve a la interfaz.
-Los correos de desarrollo pueden consultarse en Mailpit: `http://127.0.0.1:54324`.
+El inicio de sesión usa Supabase Auth y la API valida el rol Platform Owner en cada operación.
+La pantalla de inicio se puede ver sin ese rol, pero la administración de empresas requiere una
+cuenta con Platform Owner asignado mediante el proceso de bootstrap controlado, que aún no está
+implementado. El inbox de correo local está en `http://127.0.0.1:54324`.
 
 ## Comandos
 

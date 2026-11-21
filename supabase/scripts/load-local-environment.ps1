@@ -1,4 +1,4 @@
-$statusLines = & npx supabase status -o env
+$statusLines = & npx supabase status -o env 2>$null
 if ($LASTEXITCODE -ne 0) {
     throw "Unable to read local Supabase status. Start the local project with 'npx supabase start'."
 }
